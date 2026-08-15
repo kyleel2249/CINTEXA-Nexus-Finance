@@ -1,0 +1,769 @@
+// CINTEXA Nexus Finance - Prisma Schema
+// Production-grade financial intelligence data model with full provenance
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ TENANCY & AUTH ============
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       OrganizationUser[]
+  companies   Company[]
+  auditLogs   AuditLog[]
+  
+  @@map("organizations")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  firebaseUid   String?  @unique
+  role          GlobalRole @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  organizations OrganizationUser[]
+  comments      FindingComment[]
+  auditLogs     AuditLog[]
+  
+  @@map("users")
+}
+
+model OrganizationUser {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrgRole  @default(ANALYST)
+  createdAt      DateTime @default(now())
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([organizationId, userId])
+  @@map("organization_users")
+}
+
+enum GlobalRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  CFO
+  AUDITOR
+  ANALYST
+  VIEWER
+}
+
+// ============ COMPANY PROFILE ============
+
+model Company {
+  id                String   @id @default(cuid())
+  organizationId    String
+  name              String
+  legalName         String?
+  registrationNumber String?
+  industry          String?
+  sector            String?
+  country           String?
+  operatingMarkets  String[] @default([])
+  businessModel     String?
+  revenueModel      String?
+  companySize       String?
+  employees         Int?
+  reportingCurrency String   @default("USD")
+  fiscalYearEnd     String?
+  ownershipStructure String?
+  listedStatus      String?  // LISTED | PRIVATE
+  debtStructure     String?
+  majorRevenueSources String[] @default([])
+  majorExpenseCategories String[] @default([])
+  competitors       String[] @default([])
+  geographicExposure String[] @default([])
+  regulatoryExposure String[] @default([])
+  dataQualityScore  Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profiles          FinancialProfile[]
+  documents         Document[]
+  periods           FinancialPeriod[]
+  findings          AuditFinding[]
+  scenarios         Scenario[]
+  reports           Report[]
+  conversations     AIConversation[]
+  recommendations   Recommendation[]
+  actionPlans       ActionPlan[]
+  researchSources   ResearchSource[]
+  competitorsData   Competitor[]
+  alerts            Alert[]
+  
+  @@index([organizationId])
+  @@map("companies")
+}
+
+// ============ DOCUMENTS & EXTRACTION ============
+
+model Document {
+  id                String   @id @default(cuid())
+  companyId         String
+  filename          String
+  originalName      String
+  mimeType          String
+  sizeBytes         Int
+  storagePath       String
+  documentType      DocumentType?
+  classificationConfidence Float?
+  ocrStatus         ProcessingStatus @default(PENDING)
+  extractionStatus  ProcessingStatus @default(PENDING)
+  dataQualityScore  Float?
+  extractionConfidence Float?
+  pageCount         Int?
+  fiscalYear        Int?
+  reportingPeriod   String?
+  uploadedAt        DateTime @default(now())
+  processedAt       DateTime?
+  
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  pages             DocumentPage[]
+  extractedData     ExtractedFinancialData[]
+  evidenceLinks     EvidenceLink[]
+  
+  @@index([companyId])
+  @@map("documents")
+}
+
+enum DocumentType {
+  ANNUAL_REPORT
+  BALANCE_SHEET
+  INCOME_STATEMENT
+  CASH_FLOW_STATEMENT
+  STATEMENT_OF_CHANGES_IN_EQUITY
+  NOTES_TO_FINANCIAL_STATEMENTS
+  AUDITOR_REPORT
+  BANK_STATEMENT
+  TAX_DOCUMENT
+  TRIAL_BALANCE
+  GENERAL_LEDGER
+  ACCOUNTS_RECEIVABLE
+  ACCOUNTS_PAYABLE
+  PAYROLL_SUMMARY
+  MANAGEMENT_ACCOUNTS
+  BUDGET
+  FORECAST
+  DEBT_SCHEDULE
+  LOAN_AGREEMENT
+  INVESTOR_REPORT
+  BOARD_REPORT
+  OTHER
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+model DocumentPage {
+  id          String   @id @default(cuid())
+  documentId  String
+  pageNumber  Int
+  textContent String?
+  ocrConfidence Float?
+  imagePath   String?
+  
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@unique([documentId, pageNumber])
+  @@map("document_pages")
+}
+
+model ExtractedFinancialData {
+  id              String   @id @default(cuid())
+  documentId      String
+  companyId       String?
+  periodId        String?
+  fieldName       String
+  fieldPath       String?  // hierarchical path e.g. assets.current.cash
+  value           Decimal? @db.Decimal(20, 4)
+  rawValue        String?
+  currency        String?
+  unit            String?
+  pageNumber      Int?
+  tableIndex      Int?
+  rowIndex        Int?
+  cellIndex       Int?
+  confidence      Float?
+  sourceReference String?  // DOCUMENT → PAGE → TABLE → ROW/CELL
+  verified        Boolean  @default(false)
+  correctedValue  Decimal? @db.Decimal(20, 4)
+  createdAt       DateTime @default(now())
+  
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@index([documentId])
+  @@index([fieldName])
+  @@map("extracted_financial_data")
+}
+
+// ============ FINANCIAL PERIODS & STATEMENTS ============
+
+model FinancialPeriod {
+  id              String   @id @default(cuid())
+  companyId       String
+  label           String   // e.g. "FY2025", "Q1 2025"
+  fiscalYear      Int
+  periodType      PeriodType @default(ANNUAL)
+  startDate       DateTime?
+  endDate         DateTime?
+  isAudited       Boolean  @default(false)
+  accountingStandard String? // IFRS, US_GAAP, etc.
+  createdAt       DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  statements      Statement[]
+  ratios          FinancialRatio[]
+  scores          FinancialScore[]
+  riskScores      RiskScore[]
+  modelOutputs    ModelOutput[]
+  
+  @@unique([companyId, label])
+  @@index([companyId, fiscalYear])
+  @@map("financial_periods")
+}
+
+enum PeriodType {
+  ANNUAL
+  QUARTERLY
+  MONTHLY
+  YTD
+  CUSTOM
+}
+
+model Statement {
+  id              String   @id @default(cuid())
+  periodId        String
+  statementType   StatementType
+  currency        String   @default("USD")
+  createdAt       DateTime @default(now())
+  
+  period          FinancialPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  lineItems       StatementLineItem[]
+  
+  @@unique([periodId, statementType])
+  @@map("statements")
+}
+
+enum StatementType {
+  INCOME_STATEMENT
+  BALANCE_SHEET
+  CASH_FLOW
+  CHANGES_IN_EQUITY
+}
+
+model StatementLineItem {
+  id              String   @id @default(cuid())
+  statementId     String
+  code            String?  // standardized code
+  name            String
+  category        String?  // e.g. revenue, cogs, operating_expenses
+  subcategory     String?
+  value           Decimal  @db.Decimal(20, 4)
+  priorValue      Decimal? @db.Decimal(20, 4)
+  notes           String?
+  sourceDocumentId String?
+  sourcePage      Int?
+  confidence      Float?
+  isCalculated    Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  
+  statement       Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  
+  @@index([statementId])
+  @@map("statement_line_items")
+}
+
+// ============ RATIOS, SCORES, RISK ============
+
+model FinancialRatio {
+  id              String   @id @default(cuid())
+  periodId        String
+  category        RatioCategory
+  name            String
+  value           Float?
+  formula         String?
+  interpretation  String?
+  riskLevel       RiskLevel?
+  benchmarkMedian Float?
+  benchmarkTopQuartile Float?
+  benchmarkBottomQuartile Float?
+  trend           String?
+  managementImplication String?
+  createdAt       DateTime @default(now())
+  
+  period          FinancialPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  @@index([periodId, category])
+  @@map("financial_ratios")
+}
+
+enum RatioCategory {
+  LIQUIDITY
+  PROFITABILITY
+  EFFICIENCY
+  SOLVENCY
+  GROWTH
+  CASH_FLOW
+  OTHER
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  SEVERE
+  CRITICAL
+}
+
+model FinancialScore {
+  id              String   @id @default(cuid())
+  periodId        String
+  overallScore    Float    // 0-100
+  liquidityScore  Float?
+  cashFlowScore   Float?
+  profitabilityScore Float?
+  solvencyScore   Float?
+  debtSustainabilityScore Float?
+  workingCapitalScore Float?
+  growthQualityScore Float?
+  balanceSheetQualityScore Float?
+  earningsQualityScore Float?
+  classification  HealthClassification
+  explanation     String?
+  createdAt       DateTime @default(now())
+  
+  period          FinancialPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  @@map("financial_scores")
+}
+
+enum HealthClassification {
+  EXCEPTIONAL   // 90-100
+  HEALTHY       // 75-89
+  STABLE_WATCH  // 60-74
+  FINANCIAL_PRESSURE // 45-59
+  DISTRESSED    // 30-44
+  CRITICAL      // 0-29
+}
+
+model RiskScore {
+  id              String   @id @default(cuid())
+  periodId        String
+  riskType        RiskType
+  score           Float    // 0-100
+  level           RiskLevel
+  drivers         Json?
+  explanation     String?
+  createdAt       DateTime @default(now())
+  
+  period          FinancialPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  @@index([periodId, riskType])
+  @@map("risk_scores")
+}
+
+enum RiskType {
+  LIQUIDITY
+  SOLVENCY
+  DEBT
+  CASH_FLOW
+  PROFITABILITY
+  OPERATIONAL
+  REVENUE_CONCENTRATION
+  CUSTOMER_CONCENTRATION
+  SUPPLIER_CONCENTRATION
+  CURRENCY
+  INTEREST_RATE
+  MARKET
+  REGULATORY
+  GOVERNANCE
+  ACCOUNTING
+  FRAUD_ANOMALY
+  GOING_CONCERN
+  OVERALL
+}
+
+// ============ AUDIT & FORENSIC ============
+
+model AuditFinding {
+  id              String   @id @default(cuid())
+  companyId       String
+  periodId        String?
+  agentType       String?  // which agent produced it
+  title           String
+  finding         String
+  evidence        String?
+  severity        RiskLevel
+  financialImpact String?
+  risk            String?
+  recommendation  String?
+  priority        ActionPriority
+  confidence      Float?
+  status          FindingStatus @default(OPEN)
+  humanOverride   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  evidenceLinks   EvidenceLink[]
+  comments        FindingComment[]
+  workpapers      AuditWorkpaper[]
+  
+  @@index([companyId])
+  @@map("audit_findings")
+}
+
+enum ActionPriority {
+  IMMEDIATE
+  DAYS_30
+  DAYS_90
+  DAYS_180
+  LONG_TERM
+}
+
+enum FindingStatus {
+  OPEN
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  REMEDIATED
+  CLOSED
+}
+
+model EvidenceLink {
+  id              String   @id @default(cuid())
+  findingId       String?
+  documentId      String?
+  pageNumber      Int?
+  tableRef        String?
+  fieldName       String?
+  value           String?
+  description     String?
+  
+  finding         AuditFinding? @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  document        Document?     @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  
+  @@map("evidence_links")
+}
+
+model FindingComment {
+  id              String   @id @default(cuid())
+  findingId       String
+  userId          String
+  content         String
+  createdAt       DateTime @default(now())
+  
+  finding         AuditFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id])
+  
+  @@map("finding_comments")
+}
+
+model AuditWorkpaper {
+  id              String   @id @default(cuid())
+  findingId       String?
+  companyId       String?
+  objective       String
+  assertion       String?
+  evidence        String?
+  procedure       String?
+  result          String?
+  exception       String?
+  risk            String?
+  conclusion      String?
+  recommendedFollowUp String?
+  status          WorkpaperStatus @default(REVIEW_REQUIRED)
+  createdAt       DateTime @default(now())
+  
+  finding         AuditFinding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  
+  @@map("audit_workpapers")
+}
+
+enum WorkpaperStatus {
+  PASS
+  FAIL
+  EXCEPTION
+  REVIEW_REQUIRED
+  INSUFFICIENT_EVIDENCE
+}
+
+model Anomaly {
+  id              String   @id @default(cuid())
+  companyId       String?
+  periodId        String?
+  anomalyType     String
+  description     String
+  severity        RiskLevel
+  statisticalMethod String? // Benford, etc.
+  evidence        String?
+  requiresInvestigation Boolean @default(true)
+  confidence      Float?
+  createdAt       DateTime @default(now())
+  
+  @@map("anomalies")
+}
+
+// ============ SURVIVAL, SCENARIOS, FORECASTS ============
+
+model Scenario {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  scenarioType    ScenarioType
+  assumptions     Json
+  results         Json?    // cash, burn, revenue, ebitda, ocf, debt, liquidity, survivalProb
+  survivalProbability Float?
+  runwayMonths    Float?
+  createdAt       DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@map("scenarios")
+}
+
+enum ScenarioType {
+  BASE
+  OPTIMISTIC
+  PESSIMISTIC
+  SEVERE_STRESS
+  MANAGEMENT_RECOVERY
+  CUSTOM
+}
+
+model ModelOutput {
+  id              String   @id @default(cuid())
+  periodId        String
+  modelName       String   // AltmanZ, OhlsonO, BeneishM, PiotroskiF, etc.
+  result          Float?
+  interpretation  String?
+  limitations     String?
+  applicability   String?
+  inputs          Json?
+  createdAt       DateTime @default(now())
+  
+  period          FinancialPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  @@index([periodId, modelName])
+  @@map("model_outputs")
+}
+
+// ============ RECOMMENDATIONS & ACTION PLANS ============
+
+model Recommendation {
+  id              String   @id @default(cuid())
+  companyId       String
+  problem         String
+  action          String
+  owner           String?
+  costEstimate    String?
+  expectedBenefit String?
+  expectedFinancialImpact String?
+  deadline        DateTime?
+  priority        ActionPriority
+  dependencies    String?
+  successMetric   String?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@map("recommendations")
+}
+
+model ActionPlan {
+  id              String   @id @default(cuid())
+  companyId       String
+  title           String
+  timeframe       String   // 30-day, 60-day, etc.
+  tasks           Json
+  kpis            Json?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("action_plans")
+}
+
+// ============ RESEARCH & COMPETITORS ============
+
+model ResearchSource {
+  id              String   @id @default(cuid())
+  companyId       String?
+  sourceType      String
+  title           String?
+  url             String?
+  publicationDate DateTime?
+  extractedClaim  String?
+  reliabilityScore Float?
+  tier            Int?     // 1-6 source hierarchy
+  searchTimestamp DateTime @default(now())
+  
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  
+  @@map("research_sources")
+}
+
+model Competitor {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  revenue         Decimal? @db.Decimal(20, 4)
+  profit          Decimal? @db.Decimal(20, 4)
+  margins         Json?
+  assets          Decimal? @db.Decimal(20, 4)
+  debt            Decimal? @db.Decimal(20, 4)
+  marketCap       Decimal? @db.Decimal(20, 4)
+  growth          Float?
+  cashFlow        Decimal? @db.Decimal(20, 4)
+  employees       Int?
+  geographicExposure String[] @default([])
+  dataSource      String?
+  asOfDate        DateTime?
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("competitors")
+}
+
+// ============ REPORTS, AI, ALERTS, LOGS ============
+
+model Report {
+  id              String   @id @default(cuid())
+  companyId       String
+  reportType      ReportType
+  title           String
+  storagePath     String?
+  generatedAt     DateTime @default(now())
+  parameters      Json?
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@map("reports")
+}
+
+enum ReportType {
+  FULL_DIAGNOSTIC
+  CFO
+  AUDIT
+  FORENSIC_RISK
+  INVESTOR
+  LENDER
+  BOARD
+  GOING_CONCERN
+  DISTRESS
+  RECOVERY_PLAN
+  COMPETITOR
+  MONTHLY_HEALTH
+}
+
+model AIConversation {
+  id              String   @id @default(cuid())
+  companyId       String
+  messages        Json
+  mode            String?  // SIMPLE, PROFESSIONAL, AUDITOR, CFO, etc.
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_conversations")
+}
+
+model AgentRun {
+  id              String   @id @default(cuid())
+  companyId       String?
+  agentName       String
+  status          String
+  input           Json?
+  output          Json?
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  @@map("agent_runs")
+}
+
+model Alert {
+  id              String   @id @default(cuid())
+  companyId       String
+  alertType       String
+  message         String
+  severity        RiskLevel
+  acknowledged    Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("alerts")
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  organizationId  String?
+  userId          String?
+  action          String
+  entityType      String?
+  entityId        String?
+  details         Json?
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([organizationId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model FinancialProfile {
+  id              String   @id @default(cuid())
+  companyId       String
+  version         Int      @default(1)
+  snapshot        Json     // full serialized analysis state
+  healthScore     Float?
+  survivalProbability12m Float?
+  runwayMonths    Float?
+  failureRisk     RiskLevel?
+  dataQualityScore Float?
+  createdAt       DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@map("financial_profiles")
+}
