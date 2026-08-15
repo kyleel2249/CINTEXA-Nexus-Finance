@@ -1,0 +1,319 @@
+import { useState } from 'react';
+import { analyzeStructured } from './lib/api';
+import { ScoreBadge } from './components/ScoreBadge';
+import { RiskBadge } from './components/RiskBadge';
+import { MetricCard } from './components/MetricCard';
+
+const DEMO_HEALTHY = {
+  label: 'FY2025',
+  fiscalYear: 2025,
+  incomeStatement: {
+    revenue: 10000000,
+    cogs: 6000000,
+    grossProfit: 4000000,
+    operatingExpenses: 2000000,
+    ebitda: 2200000,
+    ebit: 2000000,
+    financeCosts: 150000,
+    profitBeforeTax: 1850000,
+    tax: 450000,
+    netIncome: 1400000,
+  },
+  balanceSheet: {
+    cash: 2500000,
+    accountsReceivable: 1200000,
+    inventory: 800000,
+    totalCurrentAssets: 4800000,
+    ppe: 5000000,
+    totalAssets: 11000000,
+    accountsPayable: 900000,
+    shortTermDebt: 300000,
+    totalCurrentLiabilities: 1500000,
+    longTermDebt: 2000000,
+    totalLiabilities: 4000000,
+    shareCapital: 3000000,
+    retainedEarnings: 4000000,
+    totalEquity: 7000000,
+  },
+  cashFlow: {
+    operatingCashFlow: 1800000,
+    investingCashFlow: -600000,
+    financingCashFlow: -400000,
+    freeCashFlow: 1200000,
+    capitalExpenditure: 600000,
+    netChangeInCash: 800000,
+    openingCash: 1700000,
+    closingCash: 2500000,
+  },
+};
+
+const DEMO_DISTRESSED = {
+  label: 'FY2025',
+  fiscalYear: 2025,
+  incomeStatement: {
+    revenue: 5000000,
+    cogs: 4200000,
+    grossProfit: 800000,
+    operatingExpenses: 1500000,
+    ebitda: -500000,
+    ebit: -700000,
+    financeCosts: 400000,
+    profitBeforeTax: -1100000,
+    tax: 0,
+    netIncome: -1100000,
+  },
+  balanceSheet: {
+    cash: 150000,
+    accountsReceivable: 1800000,
+    inventory: 1200000,
+    totalCurrentAssets: 3200000,
+    ppe: 2000000,
+    totalAssets: 5500000,
+    accountsPayable: 2200000,
+    shortTermDebt: 1500000,
+    totalCurrentLiabilities: 4000000,
+    longTermDebt: 3000000,
+    totalLiabilities: 7500000,
+    shareCapital: 1000000,
+    retainedEarnings: -3000000,
+    totalEquity: -2000000,
+  },
+  cashFlow: {
+    operatingCashFlow: -800000,
+    investingCashFlow: -50000,
+    financingCashFlow: 700000,
+    freeCashFlow: -850000,
+    netChangeInCash: -150000,
+    openingCash: 300000,
+    closingCash: 150000,
+  },
+};
+
+type AnalysisResult = any;
+
+export default function App() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [activeDemo, setActiveDemo] = useState<'healthy' | 'distressed' | null>(null);
+
+  async function runDemo(kind: 'healthy' | 'distressed') {
+    setLoading(true);
+    setError(null);
+    setActiveDemo(kind);
+    try {
+      const data = await analyzeStructured({
+        current: kind === 'healthy' ? DEMO_HEALTHY : DEMO_DISTRESSED,
+        dataQuality: 90,
+      });
+      setResult(data);
+    } catch (e: any) {
+      setError(e.message || 'Analysis failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const intel = result?.intelligence;
+  const health = intel?.analysis?.health;
+  const survival = intel?.analysis?.survival;
+  const findings = intel?.findings || [];
+  const panel = intel?.panelConclusion;
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              CINTEXA Nexus <span className="text-blue-600">Finance</span>
+            </h1>
+            <p className="text-xs text-slate-500">
+              Financial Health · Forensic Audit · Corporate Survival Intelligence
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => runDemo('healthy')}
+              disabled={loading}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              Demo: Healthy Co.
+            </button>
+            <button
+              onClick={() => runDemo('distressed')}
+              disabled={loading}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              Demo: Distressed Co.
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        {!result && !loading && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+            <h2 className="text-2xl font-semibold text-slate-800">Corporate Financial Intelligence</h2>
+            <p className="mx-auto mt-3 max-w-xl text-slate-600">
+              Upload financial statements or run a synthetic demo to generate a full health score,
+              distress models, survival estimate, multi-agent audit findings and action priorities.
+            </p>
+            <p className="mt-6 text-sm text-slate-400">
+              Use the demo buttons above to see healthy vs distressed outcomes.
+            </p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="py-20 text-center text-slate-500">
+            Running financial engine + multi-agent panel…
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>
+        )}
+
+        {result && health && survival && (
+          <div className="space-y-8">
+            {/* Executive verdict */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {activeDemo === 'healthy' ? 'Healthy Company (Demo)' : activeDemo === 'distressed' ? 'Distressed Company (Demo)' : 'Analysis Result'}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">Data quality: {result.dataQualityScore}%</p>
+                </div>
+                <ScoreBadge score={health.overallScore} classification={health.classification} />
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricCard
+                  label="12-Month Survival"
+                  value={`${survival.survivalProbability12m}%`}
+                  sub={`Confidence ${survival.confidence}%`}
+                  accent={survival.survivalProbability12m >= 70 ? 'green' : survival.survivalProbability12m >= 50 ? 'amber' : 'red'}
+                />
+                <MetricCard
+                  label="Base-Case Runway"
+                  value={survival.runwayMonthsBase != null ? `${survival.runwayMonthsBase} mo` : 'N/A'}
+                  sub={survival.primaryConstraint}
+                  accent={survival.runwayMonthsBase != null && survival.runwayMonthsBase >= 18 ? 'green' : 'amber'}
+                />
+                <MetricCard
+                  label="Failure Risk"
+                  value={survival.failureRisk}
+                  accent={survival.failureRisk === 'LOW' ? 'green' : survival.failureRisk === 'MODERATE' ? 'amber' : 'red'}
+                />
+                <MetricCard
+                  label="Panel Findings"
+                  value={panel?.totalFindings ?? findings.length}
+                  sub={`${panel?.criticalOrSevere ?? 0} critical/severe`}
+                  accent="blue"
+                />
+              </div>
+            </section>
+
+            {/* Health dimensions */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900">Health Score Dimensions</h3>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {Object.entries(health.dimensions).map(([key, val]) => (
+                  <div key={key} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                    <span className="text-sm capitalize text-slate-600">{key.replace(/([A-Z])/g, ' $1')}</span>
+                    <span className="font-semibold tabular-nums">{(val as number).toFixed(0)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-sm text-slate-600">{health.explanation}</p>
+            </section>
+
+            {/* Key ratios */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900">Key Ratios</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b text-xs uppercase text-slate-500">
+                      <th className="py-2 pr-4">Ratio</th>
+                      <th className="py-2 pr-4">Value</th>
+                      <th className="py-2 pr-4">Risk</th>
+                      <th className="py-2">Interpretation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(intel.analysis.ratios || []).slice(0, 12).map((r: any) => (
+                      <tr key={r.name} className="border-b border-slate-100">
+                        <td className="py-2 pr-4 font-medium">{r.name}</td>
+                        <td className="py-2 pr-4 tabular-nums">
+                          {r.value == null ? '—' : typeof r.value === 'number' ? r.value.toFixed(2) : r.value}
+                        </td>
+                        <td className="py-2 pr-4">
+                          <RiskBadge level={r.riskLevel} />
+                        </td>
+                        <td className="py-2 text-slate-600 max-w-md">{r.interpretation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* Distress models */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900">Distress Models</h3>
+              <div className="mt-4 space-y-4">
+                {(intel.analysis.distressModels || []).map((m: any) => (
+                  <div key={m.modelName} className="rounded-lg border border-slate-100 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">{m.modelName}</span>
+                      <span className="text-sm tabular-nums text-slate-600">
+                        Result: {m.result == null ? 'N/A' : m.result.toFixed?.(2) ?? m.result}
+                        {m.zone ? ` · ${m.zone}` : ''}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-600">{m.interpretation}</p>
+                    <p className="mt-1 text-xs text-slate-400">Limitations: {m.limitations}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Agent findings */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900">Expert Panel Findings</h3>
+              {panel && (
+                <p className="mt-2 text-sm text-slate-600">{panel.summary}</p>
+              )}
+              <div className="mt-4 space-y-3">
+                {findings.map((f: any, i: number) => (
+                  <div key={i} className="rounded-lg border border-slate-100 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RiskBadge level={f.severity} />
+                      <span className="text-xs uppercase text-slate-400">{f.agent.replace(/_/g, ' ')}</span>
+                      <span className="text-xs text-slate-400">· {f.priority.replace(/_/g, ' ')}</span>
+                    </div>
+                    <h4 className="mt-1 font-medium text-slate-900">{f.title}</h4>
+                    <p className="mt-1 text-sm text-slate-600">{f.finding}</p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      <strong>Evidence:</strong> {f.evidence}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      <strong>Recommendation:</strong> {f.recommendation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Disclaimer */}
+            <p className="text-xs leading-relaxed text-slate-400">{result.disclaimer}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

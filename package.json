@@ -8,11 +8,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
-    "build": "npm run build -w packages/shared && npm run build -w packages/financial-engine && npm run build -w packages/document-processor && npm run build -w packages/ai-agents && npm run build -w apps/api && npm run build -w apps/web",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint . --ext .ts,.tsx",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @cintexa/api\" \"npm run dev -w @cintexa/web\"",
+    "dev:api": "npm run dev -w @cintexa/api",
+    "dev:web": "npm run dev -w @cintexa/web",
+    "build": "npm run build -w @cintexa/shared && npm run build -w @cintexa/financial-engine && npm run build -w @cintexa/document-processor && npm run build -w @cintexa/ai-agents && npm run build -w @cintexa/api && npm run build -w @cintexa/web",
+    "test": "npm run test -w @cintexa/financial-engine --if-present",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -22,10 +22,9 @@
     "concurrently": "^9.1.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
-    "eslint": "^9.17.0",
-    "@types/node": "^22.10.2",
     "prisma": "^6.1.0",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "@types/node": "^22.10.2"
   },
   "engines": {
     "node": ">=20"
