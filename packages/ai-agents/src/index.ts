@@ -1,13 +1,15 @@
 /**
  * @cintexa/ai-agents
- * Multi-agent audit, forensic, going-concern, CFO and debate layer
+ * Multi-agent audit, forensic, going-concern, CFO, recommendations and debate layer
  */
 
 export * from './agents';
 export * from './debate';
+export * from './recommendations';
 
 import { runAgentPanel, type AgentContext, type AgentFinding } from './agents';
 import { detectConflicts, buildPanelConclusion } from './debate';
+import { generateRecommendations, buildActionPlans } from './recommendations';
 import { analyzePeriod } from '@cintexa/financial-engine';
 import type { FinancialPeriodData } from '@cintexa/financial-engine';
 
@@ -16,11 +18,10 @@ export interface FullIntelligenceResult {
   findings: AgentFinding[];
   debates: ReturnType<typeof detectConflicts>;
   panelConclusion: ReturnType<typeof buildPanelConclusion>;
+  recommendations: ReturnType<typeof generateRecommendations>;
+  actionPlans: ReturnType<typeof buildActionPlans>;
 }
 
-/**
- * Orchestrates financial engine + multi-agent review into a single intelligence profile.
- */
 export function runFullIntelligence(
   current: FinancialPeriodData,
   prior?: FinancialPeriodData,
@@ -40,5 +41,7 @@ export function runFullIntelligence(
   const findings = runAgentPanel(ctx);
   const debates = detectConflicts(findings);
   const panelConclusion = buildPanelConclusion(findings, debates);
-  return { analysis, findings, debates, panelConclusion };
+  const recommendations = generateRecommendations(analysis.health, analysis.survival, analysis.ratios, findings);
+  const actionPlans = buildActionPlans(recommendations);
+  return { analysis, findings, debates, panelConclusion, recommendations, actionPlans };
 }

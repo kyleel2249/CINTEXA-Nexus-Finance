@@ -309,6 +309,46 @@ export default function App() {
               </div>
             </section>
 
+            {/* Recommendations */}
+            {intel.recommendations?.length > 0 && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Priority Recommendations</h3>
+                <div className="mt-4 space-y-3">
+                  {intel.recommendations.slice(0, 8).map((r: any) => (
+                    <div key={r.id} className="rounded-lg border border-slate-100 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <RiskBadge level={r.severity} />
+                        <span className="text-xs text-slate-400">{r.priority.replace(/_/g, ' ')}</span>
+                        <span className="text-xs text-slate-400">· Owner: {r.owner}</span>
+                      </div>
+                      <h4 className="mt-1 font-medium text-slate-900">{r.problem}</h4>
+                      <p className="mt-1 text-sm text-slate-600">{r.action}</p>
+                      <p className="mt-2 text-xs text-slate-500"><strong>Success metric:</strong> {r.successMetric}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Action plans */}
+            {intel.actionPlans?.length > 0 && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Action Plans</h3>
+                <div className="mt-4 space-y-4">
+                  {intel.actionPlans.map((plan: any) => (
+                    <div key={plan.timeframe} className="rounded-lg bg-slate-50 p-4">
+                      <h4 className="font-medium text-slate-800">{plan.title}</h4>
+                      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-600">
+                        {plan.tasks.map((t: any) => (
+                          <li key={t.step}>{t.description} <span className="text-slate-400">({t.owner})</span></li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Disclaimer */}
             <p className="text-xs leading-relaxed text-slate-400">{result.disclaimer}</p>
           </div>
