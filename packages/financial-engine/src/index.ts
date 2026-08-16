@@ -10,6 +10,7 @@ export * from './distress';
 export * from './health';
 export * from './survival';
 export * from './reconciliation';
+export * from './report/executiveSummary';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';
