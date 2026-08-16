@@ -252,3 +252,75 @@ export function runAgentPanel(ctx: AgentContext): AgentFinding[] {
   }
   return all;
 }
+
+export const revenueAuditor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const rev = ctx.current.incomeStatement.revenue;
+  const ar = ctx.current.balanceSheet.accountsReceivable || 0;
+  if (rev > 0 && ar / rev > 0.35) {
+    findings.push(
+      finding(
+        'REVENUE_AUDITOR',
+        'Elevated Receivables Relative to Revenue',
+        `Accounts receivable represent ${((ar / rev) * 100).toFixed(1)}% of annual revenue — elevated collection risk or recognition timing concern.`,
+        `AR ${ar}, Revenue ${rev}`,
+        'MODERATE',
+        'Review aging, credit policy and revenue cut-off. Confirm collectability. Requires investigation if concentration or long overdue balances exist.',
+        'DAYS_30',
+        70,
+        'Working-capital stress or revenue quality issue.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const liabilityAuditor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const st = ctx.current.balanceSheet.shortTermDebt || 0;
+  const lt = ctx.current.balanceSheet.longTermDebt || 0;
+  const total = st + lt;
+  if (total > 0 && st / total > 0.6) {
+    findings.push(
+      finding(
+        'LIABILITY_AUDITOR',
+        'Debt Maturity Concentration (Short-term Heavy)',
+        'A high proportion of total debt is classified as short-term, increasing refinancing and liquidity pressure.',
+        `Short-term debt ${st}, Long-term ${lt}`,
+        'HIGH',
+        'Obtain full debt schedule with maturity dates and covenants. Plan refinancing well ahead of maturity walls.',
+        'DAYS_30',
+        75,
+        'Refinancing risk if markets tighten or covenants tighten.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const restructuringSpecialist: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  if (ctx.health.overallScore < 40 || ctx.survival.failureRisk === 'CRITICAL' || ctx.survival.failureRisk === 'SEVERE') {
+    findings.push(
+      finding(
+        'RESTRUCTURING_SPECIALIST',
+        'Turnaround Mode Indicated',
+        'Financial condition warrants formal turnaround consideration: cost base, capital structure and possibly portfolio actions.',
+        `Health ${ctx.health.overallScore}, Failure risk ${ctx.survival.failureRisk}, Runway ${ctx.survival.runwayMonthsBase}`,
+        ctx.survival.failureRisk,
+        'Prioritize: (1) cash conservation, (2) stakeholder map (lenders, landlords, key suppliers), (3) independent restructuring advisor if insolvency risk is material, (4) options analysis (amend & extend, equity, asset sales, administration alternatives where legally relevant).',
+        'IMMEDIATE',
+        80,
+        'Delayed restructuring reduces optionality and recoveries.'
+      )
+    );
+  }
+  return findings;
+};
+
+// Register additional agents
+ALL_AGENTS.push(
+  { name: 'REVENUE_AUDITOR', run: revenueAuditor },
+  { name: 'LIABILITY_AUDITOR', run: liabilityAuditor },
+  { name: 'RESTRUCTURING_SPECIALIST', run: restructuringSpecialist }
+);

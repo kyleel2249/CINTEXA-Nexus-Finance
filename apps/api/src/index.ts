@@ -8,6 +8,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { healthRouter } from './routes/health.js';
 import { analyzeRouter } from './routes/analyze.js';
+import { scenariosRouter } from './routes/scenarios.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/health', healthRouter);
 app.use('/api/analyze', analyzeRouter);
+app.use('/api/scenarios', scenariosRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -28,6 +30,7 @@ app.get('/', (_req, res) => {
       health: 'GET /health',
       analyzeText: 'POST /api/analyze/text',
       analyzeStructured: 'POST /api/analyze/structured',
+      whatIf: 'POST /api/scenarios/what-if',
     },
   });
 });
