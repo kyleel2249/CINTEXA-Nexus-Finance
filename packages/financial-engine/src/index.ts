@@ -11,6 +11,7 @@ export * from './health';
 export * from './survival';
 export * from './reconciliation';
 export * from './report/executiveSummary';
+export * from './report/reportBuilder';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';

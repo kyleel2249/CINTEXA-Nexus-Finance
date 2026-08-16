@@ -217,6 +217,51 @@ export default function App() {
               </div>
             </section>
 
+            {/* Executive Verdict */}
+            {intel.verdict && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Corporate Financial Verdict</h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+                  <div><span className="text-slate-500">Condition</span><div className="font-semibold">{intel.verdict.currentCondition}</div></div>
+                  <div><span className="text-slate-500">Liquidity risk</span><div className="font-semibold">{intel.verdict.liquidityRisk}</div></div>
+                  <div><span className="text-slate-500">Solvency risk</span><div className="font-semibold">{intel.verdict.solvencyRisk}</div></div>
+                  <div><span className="text-slate-500">Cash-flow risk</span><div className="font-semibold">{intel.verdict.cashFlowRisk}</div></div>
+                  <div><span className="text-slate-500">Going-concern risk</span><div className="font-semibold">{intel.verdict.goingConcernRisk}</div></div>
+                  <div><span className="text-slate-500">24-mo survival</span><div className="font-semibold">{intel.verdict.survival24m}%</div></div>
+                </div>
+                <p className="mt-4 text-sm text-slate-600"><strong>Why:</strong> {intel.verdict.why}</p>
+                <p className="mt-2 text-sm text-slate-600"><strong>Management should:</strong> {intel.verdict.whatManagementShouldDo}</p>
+                <p className="mt-2 text-sm text-slate-500"><strong>What could change the result:</strong> {intel.verdict.whatCouldChange}</p>
+              </section>
+            )}
+
+            {/* Scenarios */}
+            {intel.analysis?.scenarios?.length > 0 && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Scenario Analysis</h3>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b text-xs uppercase text-slate-500">
+                        <th className="py-2 pr-4">Scenario</th>
+                        <th className="py-2 pr-4">Runway (mo)</th>
+                        <th className="py-2">Survival prob.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {intel.analysis.scenarios.map((s: any) => (
+                        <tr key={s.name} className="border-b border-slate-100">
+                          <td className="py-2 pr-4 font-medium">{s.name}</td>
+                          <td className="py-2 pr-4 tabular-nums">{s.runwayMonths}</td>
+                          <td className="py-2 tabular-nums">{s.survivalProbability}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
             {/* Health dimensions */}
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="font-semibold text-slate-900">Health Score Dimensions</h3>

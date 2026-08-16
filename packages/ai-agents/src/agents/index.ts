@@ -324,3 +324,151 @@ ALL_AGENTS.push(
   { name: 'LIABILITY_AUDITOR', run: liabilityAuditor },
   { name: 'RESTRUCTURING_SPECIALIST', run: restructuringSpecialist }
 );
+
+export const expenseAuditor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const is = ctx.current.incomeStatement;
+  const opex = is.operatingExpenses ?? 0;
+  const rev = is.revenue || 1;
+  if (opex / rev > 0.45 && (is.ebit ?? 0) <= 0) {
+    findings.push(
+      finding(
+        'EXPENSE_AUDITOR',
+        'High Operating Expense Burden',
+        `Operating expenses represent ${((opex / rev) * 100).toFixed(1)}% of revenue while operating profit is non-positive.`,
+        `Opex ${opex}, Revenue ${rev}, EBIT ${is.ebit}`,
+        'HIGH',
+        'Perform zero-based review of controllable costs. Separate fixed vs variable. Identify non-core spend for immediate reduction.',
+        'DAYS_30',
+        75,
+        'Structural cost base may be incompatible with current revenue.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const assetAuditor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const bs = ctx.current.balanceSheet;
+  const intangibles = bs.intangibleAssets || 0;
+  const assets = bs.totalAssets || 1;
+  if (intangibles / assets > 0.35) {
+    findings.push(
+      finding(
+        'ASSET_AUDITOR',
+        'Elevated Intangible Asset Concentration',
+        `Intangible assets are ${((intangibles / assets) * 100).toFixed(1)}% of total assets — impairment risk if cash flows deteriorate.`,
+        `Intangibles ${intangibles}, Total assets ${assets}`,
+        'MODERATE',
+        'Review impairment indicators, useful lives and supporting cash-flow forecasts. Requires investigation if CGUs underperform.',
+        'DAYS_90',
+        70,
+        'Aggressive intangible carrying values can mask underlying asset quality issues.'
+      )
+    );
+  }
+  const inv = bs.inventory || 0;
+  if (inv > 0 && bs.totalCurrentAssets > 0 && inv / bs.totalCurrentAssets > 0.5) {
+    findings.push(
+      finding(
+        'ASSET_AUDITOR',
+        'Inventory-Heavy Current Assets',
+        'Inventory forms a large share of current assets, reducing liquid coverage of short-term obligations.',
+        `Inventory ${inv}, Current assets ${bs.totalCurrentAssets}`,
+        'MODERATE',
+        'Assess obsolescence, turnover and net realizable value. Align production/purchasing with demand.',
+        'DAYS_30',
+        70,
+        'Inventory buildup can signal demand weakness or working-capital inefficiency.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const taxRiskAuditor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const is = ctx.current.incomeStatement;
+  if ((is.profitBeforeTax ?? 0) > 0 && (is.tax === 0 || is.tax === undefined)) {
+    findings.push(
+      finding(
+        'TAX_RISK_AUDITOR',
+        'Zero or Missing Tax Expense on Positive PBT',
+        'Profit before tax is positive but tax expense is zero or not extracted — may indicate losses carried forward, extraction gap, or tax position requiring review.',
+        `PBT ${is.profitBeforeTax}, Tax ${is.tax}`,
+        'MODERATE',
+        'Verify tax computation, deferred tax and any uncertain tax positions with tax advisors. Confirm extraction completeness.',
+        'DAYS_90',
+        60,
+        'Tax positions can create contingent liabilities if challenged.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const industryAnalyst: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  // Without external benchmarks we note the limitation rather than invent peers
+  findings.push(
+    finding(
+      'INDUSTRY_ANALYST',
+      'Industry Benchmark Context',
+      'Peer and industry median comparisons require selected peer group or external research data. Internal ratios have been computed; external benchmarking is pending research inputs.',
+      'No verified peer dataset attached to this run.',
+      'LOW',
+      'Select industry/peer set and refresh research to compare margins, leverage and growth against medians and quartiles.',
+      'DAYS_90',
+      50,
+      'Absence of peer context limits relative performance assessment.'
+    )
+  );
+  if (ctx.health.dimensions.profitability < 35) {
+    findings.push(
+      finding(
+        'INDUSTRY_ANALYST',
+        'Profitability Below Typical Healthy Levels',
+        'Internal profitability dimensions score weakly. Industry-specific margin norms should be confirmed before concluding structural underperformance.',
+        `Profitability dimension ${ctx.health.dimensions.profitability}`,
+        'MODERATE',
+        'Obtain sector margin benchmarks and assess whether cost structure or pricing power is the primary driver.',
+        'DAYS_90',
+        65,
+        'Misreading industry norms can lead to incorrect strategic responses.'
+      )
+    );
+  }
+  return findings;
+};
+
+export const boardRiskAdvisor: AgentRunner = (ctx) => {
+  const findings: AgentFinding[] = [];
+  const critical = ctx.survival.failureRisk === 'CRITICAL' || ctx.survival.failureRisk === 'SEVERE';
+  findings.push(
+    finding(
+      'BOARD_RISK_ADVISOR',
+      critical ? 'Board-Level Decision Required' : 'Board Monitoring Recommended',
+      critical
+        ? 'Financial condition and survival indicators warrant formal board consideration of liquidity, going-concern disclosure and recovery options.'
+        : `Health classification ${ctx.health.classification}. Board should monitor cash, covenants and trajectory on a scheduled cadence.`,
+      `Health ${ctx.health.overallScore}, Survival 12m ${ctx.survival.survivalProbability12m}%, Failure risk ${ctx.survival.failureRisk}`,
+      critical ? 'CRITICAL' : ctx.health.overallScore < 60 ? 'MODERATE' : 'LOW',
+      critical
+        ? 'Convene board (or committee) promptly. Review cash forecast, debt obligations, auditor communications and management recovery plan. Consider independent advice.'
+        : 'Include financial health score, runway and top risks in board pack. Set threshold-based escalation triggers.',
+      critical ? 'IMMEDIATE' : 'DAYS_90',
+      85,
+      critical ? 'Governance delay under distress increases stakeholder and personal exposure risk.' : 'Routine oversight reduces surprise risk.'
+    )
+  );
+  return findings;
+};
+
+ALL_AGENTS.push(
+  { name: 'EXPENSE_AUDITOR', run: expenseAuditor },
+  { name: 'ASSET_AUDITOR', run: assetAuditor },
+  { name: 'TAX_RISK_AUDITOR', run: taxRiskAuditor },
+  { name: 'INDUSTRY_ANALYST', run: industryAnalyst },
+  { name: 'BOARD_RISK_ADVISOR', run: boardRiskAdvisor }
+);

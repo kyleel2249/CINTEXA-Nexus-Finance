@@ -6,6 +6,7 @@
 export * from './classification';
 export * from './extraction';
 export * from './normalization';
+export * from './ocr';
 
 import { classifyDocument } from './classification';
 import { extractFromText, mapExtractedToPeriodData } from './extraction';
