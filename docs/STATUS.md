@@ -1,52 +1,81 @@
 # Implementation Status vs Master Build Prompt
 
-## Completed
+**Repo:** https://github.com/kyleel2249/CINTEXA-Nexus-Finance
 
-| Area | Status |
-|------|--------|
-| Monorepo + TypeScript architecture | Done |
-| Prisma schema (full entity set) | Done |
-| Ratio engine + interpretation | Done |
-| Health score (0–100, 9 dimensions) | Done |
-| Altman Z / Z', Beneish, Piotroski, cash-flow distress | Done |
-| Survival / runway + standard scenarios | Done |
+## Completed core
+
+| Capability | Status |
+|------------|--------|
+| Monorepo (apps + packages) | Done |
+| Prisma schema (full entities + provenance) | Done |
+| Ratio engine + risk interpretation | Done |
+| Health score 0–100 (9 dimensions) | Done |
+| Distress models (Altman Z/Z', Beneish, Piotroski, cash-flow) | Done |
+| Survival / runway + 5 standard scenarios | Done |
 | What-if scenario API | Done |
 | Accounting reconciliation (no silent fix) | Done |
 | Document classification | Done |
-| Heuristic extraction + provenance contract | Done |
+| Extraction + provenance contract | Done |
 | OCR adapter interface | Done |
-| Multi-agent panel (14 agents) + debate | Done |
-| Recommendations + action plans | Done |
-| Executive verdict engine | Done |
-| Markdown report builder + API | Done |
-| Company workspace (create, analyze, snapshots, compare) | Done (in-memory; Prisma-ready) |
-| Express API surface | Done |
-| Executive dashboard (demos, verdict, scenarios, recs) | Done |
-| Professional disclaimer | Done |
-| Vitest synthetic healthy/distressed tests | Scaffolded |
+| **14-agent audit panel** + debate/consensus | Done |
+| Recommendations + Immediate/30/90/12-mo plans | Done |
+| Executive verdict | Done |
+| Markdown diagnostic report API | Done |
+| Company workspaces + snapshots + before/after compare | Done (in-memory) |
+| AI CFO chat (evidence-grounded) | Done |
+| Research source hierarchy (6 tiers) | Done |
+| Upload panel (text/CSV; binary via OCR path) | Done |
+| Auth middleware stub + RBAC helpers | Done |
+| Executive React dashboard | Done |
+| Professional safety disclaimer | Done |
 
-## Agent coverage
+## Agent panel (complete set)
 
-Lead Audit Partner · Financial Statement Auditor · Forensic Accountant · Revenue · Expense · Asset · Liability · Cash · Tax Risk · Going-Concern · Industry · CFO · Restructuring · Board Risk Advisor
+1. Lead Audit Partner  
+2. Financial Statement Auditor  
+3. Forensic Accountant  
+4. Revenue Auditor  
+5. Expense Auditor  
+6. Asset Auditor  
+7. Liability Auditor  
+8. Cash Auditor  
+9. Tax Risk Auditor  
+10. Going-Concern Specialist  
+11. Industry Analyst  
+12. CFO Agent  
+13. Restructuring Specialist  
+14. Board Risk Advisor  
 
-## Next priorities
+## API surface
 
-1. Prisma persistence wiring (DATABASE_URL) for companies/documents/profiles
-2. Binary PDF generation (Puppeteer/PDFKit) from report sections
-3. Drag-and-drop upload UI with progress
-4. What-if interactive controls on dashboard
-5. AI CFO chat endpoint
-6. Auth / RBAC / org isolation middleware
-7. External research agent with source tiers
-8. Continuous monitoring alerts
-9. Production OCR adapter (Textract/Vision)
-10. Full automated test suite across packages
+- `GET /health`
+- `POST /api/analyze/text`
+- `POST /api/analyze/structured`
+- `POST /api/scenarios/what-if`
+- `GET/POST /api/companies`
+- `POST /api/companies/:id/analyze`
+- `GET /api/companies/:id/snapshots`
+- `GET /api/companies/:id/compare`
+- `POST /api/reports/markdown`
+- `POST /api/cfo-chat`
 
-## Design invariants enforced
+## Remaining toward full production
 
-- Probabilistic language for survival/failure
-- Anomaly ≠ fraud wording
-- Traceability fields on extractions
-- Confidence / data quality surfaced
-- No single distress model treated as definitive
-- No silent correction of unbalanced statements
+1. Prisma persistence when `DATABASE_URL` is set  
+2. Binary PDF (Puppeteer/PDFKit) from report sections  
+3. Production OCR (Textract / Vision / Azure)  
+4. Interactive what-if controls on UI  
+5. Firebase/JWT real auth + org isolation  
+6. External research fetch with live sources  
+7. Continuous monitoring / alert channels  
+8. Full vitest coverage across packages  
+9. Drag-and-drop multi-file queue with progress polling  
+
+## Design invariants (enforced in code)
+
+- Survival/failure language is probabilistic  
+- Anomalies require investigation (not labeled fraud)  
+- Extraction retains document→page→field provenance  
+- Confidence and data quality always surfaced  
+- Ensemble of distress models; none treated as sole truth  
+- Unbalanced statements flagged, never auto-corrected  

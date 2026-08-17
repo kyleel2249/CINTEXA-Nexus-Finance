@@ -13,6 +13,7 @@ import { companiesRouter } from './routes/companies.js';
 import { reportsRouter } from './routes/reports.js';
 import { cfoChatRouter } from './routes/cfoChat.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { authMiddleware } from './middleware/auth.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -20,6 +21,7 @@ const PORT = Number(process.env.PORT) || 4000;
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '10mb' }));
+app.use(authMiddleware);
 
 app.use('/health', healthRouter);
 app.use('/api/analyze', analyzeRouter);
