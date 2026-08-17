@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { analyzeUploadedText, analyzeStructuredPeriod } from '../services/analysisService.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { appendAudit } from '../services/auditTrail.js';
 
 export const analyzeRouter = Router();
 
@@ -28,6 +29,13 @@ analyzeRouter.post('/text', (req, res, next) => {
   try {
     const body = textSchema.parse(req.body);
     const result = analyzeUploadedText(body);
+    appendAudit({
+      action: 'ANALYZE_TEXT',
+      entityType: 'Analysis',
+      userId: (req as any).auth?.userId,
+      organizationId: (req as any).auth?.organizationId,
+      details: { filename: body.filename },
+    });
     res.json(result);
   } catch (err) {
     next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; '), 'VALIDATION') : err);
@@ -38,6 +46,13 @@ analyzeRouter.post('/structured', (req, res, next) => {
   try {
     const body = structuredSchema.parse(req.body);
     const result = analyzeStructuredPeriod(body.current as any, body.prior, body.dataQuality);
+    appendAudit({
+      action: 'ANALYZE_STRUCTURED',
+      entityType: 'Analysis',
+      userId: (req as any).auth?.userId,
+      organizationId: (req as any).auth?.organizationId,
+      details: { period: body.current?.label },
+    });
     res.json(result);
   } catch (err) {
     next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; '), 'VALIDATION') : err);

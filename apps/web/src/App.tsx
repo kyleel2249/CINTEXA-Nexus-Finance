@@ -8,6 +8,8 @@ import { WhatIfPanel } from './components/WhatIfPanel';
 import { BoardroomView } from './components/BoardroomView';
 import { SurvivalClock } from './components/SurvivalClock';
 import { PeriodComparisonPanel } from './components/PeriodComparisonPanel';
+import { PerspectivePanel } from './components/PerspectivePanel';
+import { JobStatusPanel } from './components/JobStatusPanel';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -537,6 +539,8 @@ export default function App() {
             )}
 
             {analysisPeriod && <WhatIfPanel current={analysisPeriod} />}
+            {analysisPeriod && <PerspectivePanel current={analysisPeriod} />}
+            {analysisPeriod && <JobStatusPanel current={analysisPeriod} />}
 
             {/* Report download */}
             {analysisPeriod && (

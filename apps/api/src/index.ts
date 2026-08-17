@@ -17,6 +17,8 @@ import { perspectivesRouter } from './routes/perspectives.js';
 import { memoRouter } from './routes/memo.js';
 import { exportRouter } from './routes/export.js';
 import { jobsRouter } from './routes/jobs.js';
+import { auditRouter } from './routes/audit.js';
+import { benchmarksRouter } from './routes/benchmarks.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authMiddleware } from './middleware/auth.js';
 import { apiKeyMiddleware } from './middleware/apiKey.js';
@@ -43,6 +45,8 @@ app.use('/api/perspectives', perspectivesRouter);
 app.use('/api/memo', memoRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/jobs', jobsRouter);
+app.use('/api/audit', auditRouter);
+app.use('/api/benchmarks', benchmarksRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -67,6 +71,8 @@ app.get('/', (_req, res) => {
       jobs: 'GET /api/jobs, GET /api/jobs/:id',
       jobAnalyzeStructured: 'POST /api/jobs/analyze-structured',
       jobAnalyzeText: 'POST /api/jobs/analyze-text',
+      audit: 'GET /api/audit',
+      benchmarks: 'POST /api/benchmarks/compare',
     },
   });
 });

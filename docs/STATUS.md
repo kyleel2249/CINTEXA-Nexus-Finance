@@ -43,6 +43,10 @@
 | Async job queue (in-memory) | Done |
 | API key + rate limit middleware | Done |
 | Multi-year comparison UI panel | Done |
+| Stakeholder perspective UI | Done |
+| Async job status UI with polling | Done |
+| Industry benchmark scaffold (no fabrication) | Done |
+| In-memory audit trail API | Done |
 
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |

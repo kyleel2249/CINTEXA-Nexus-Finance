@@ -20,6 +20,7 @@ export * from './memo';
 export * from './heatmap';
 export * from './forensic';
 export * from './goingConcern';
+export * from './benchmarks';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';
