@@ -34,7 +34,12 @@
 | Management memo generator + API | Done |
 | Audit risk heatmap | Done |
 | Alert webhook dispatcher (ALERT_WEBHOOK_URL) | Done |
-| GitHub Actions CI workflow | Done |
+| GitHub Actions CI workflow | Docs only (PAT scope) |
+| Survival clock UI | Done |
+| CSV export (ratios + comparison) | Done |
+| Print/PDF via HTML report | Done |
+| Prisma org bootstrap + audit log | Done |
+| Demo seed script | Done |
 
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |

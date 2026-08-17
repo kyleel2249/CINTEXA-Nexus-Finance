@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { analyzeStructured, analyzeText, askCfo, downloadReportMarkdown } from './lib/api';
+import { analyzeStructured, analyzeText, askCfo, downloadReportMarkdown, downloadReportHtml, downloadRatiosCsv } from './lib/api';
 import { ScoreBadge } from './components/ScoreBadge';
 import { RiskBadge } from './components/RiskBadge';
 import { MetricCard } from './components/MetricCard';
 import { UploadPanel } from './components/UploadPanel';
 import { WhatIfPanel } from './components/WhatIfPanel';
 import { BoardroomView } from './components/BoardroomView';
+import { SurvivalClock } from './components/SurvivalClock';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -455,6 +456,11 @@ export default function App() {
               </section>
             )}
 
+            <SurvivalClock
+              runwayMonthsBase={survival.runwayMonthsBase}
+              survivalProbability12m={survival.survivalProbability12m}
+            />
+
             {/* Heatmap */}
             {intel.analysis?.heatmap?.length > 0 && expertMode !== 'SIMPLE' && (
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -492,7 +498,7 @@ export default function App() {
 
             {/* Report download */}
             {analysisPeriod && (
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <button
                   disabled={reportBusy}
                   className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
@@ -519,6 +525,56 @@ export default function App() {
                   }}
                 >
                   {reportBusy ? 'Generating…' : 'Download Markdown Report'}
+                </button>
+                <button
+                  disabled={reportBusy}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  onClick={async () => {
+                    setReportBusy(true);
+                    try {
+                      const html = await downloadReportHtml({
+                        companyName: activeDemo === 'healthy' ? 'Healthy Demo Co' : activeDemo === 'distressed' ? 'Distressed Demo Co' : 'Company',
+                        current: analysisPeriod,
+                        dataQuality: 90,
+                      });
+                      const w = window.open('', '_blank');
+                      if (w) {
+                        w.document.write(html);
+                        w.document.close();
+                        w.focus();
+                        setTimeout(() => w.print(), 400);
+                      }
+                    } catch (e: any) {
+                      setError(e.message || 'Print failed');
+                    } finally {
+                      setReportBusy(false);
+                    }
+                  }}
+                >
+                  Print / PDF
+                </button>
+                <button
+                  disabled={reportBusy}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  onClick={async () => {
+                    setReportBusy(true);
+                    try {
+                      const csv = await downloadRatiosCsv({ current: analysisPeriod, dataQuality: 90 });
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'cintexa-ratios.csv';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch (e: any) {
+                      setError(e.message || 'CSV export failed');
+                    } finally {
+                      setReportBusy(false);
+                    }
+                  }}
+                >
+                  Export Ratios CSV
                 </button>
               </div>
             )}

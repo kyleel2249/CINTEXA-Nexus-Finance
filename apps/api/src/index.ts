@@ -15,6 +15,7 @@ import { cfoChatRouter } from './routes/cfoChat.js';
 import { compareRouter } from './routes/compare.js';
 import { perspectivesRouter } from './routes/perspectives.js';
 import { memoRouter } from './routes/memo.js';
+import { exportRouter } from './routes/export.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authMiddleware } from './middleware/auth.js';
 
@@ -35,6 +36,7 @@ app.use('/api/cfo-chat', cfoChatRouter);
 app.use('/api/compare', compareRouter);
 app.use('/api/perspectives', perspectivesRouter);
 app.use('/api/memo', memoRouter);
+app.use('/api/export', exportRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -54,6 +56,8 @@ app.get('/', (_req, res) => {
       comparePeriods: 'POST /api/compare/periods',
       perspectives: 'POST /api/perspectives',
       memo: 'POST /api/memo',
+      exportRatiosCsv: 'POST /api/export/ratios.csv',
+      exportComparisonCsv: 'POST /api/export/comparison.csv',
     },
   });
 });

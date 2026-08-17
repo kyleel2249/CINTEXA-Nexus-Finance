@@ -13,6 +13,7 @@ export * from './reconciliation';
 export * from './report/executiveSummary';
 export * from './report/reportBuilder';
 export * from './report/htmlReport';
+export * from './report/csvExport';
 export * from './alerts';
 export * from './comparison';
 export * from './memo';

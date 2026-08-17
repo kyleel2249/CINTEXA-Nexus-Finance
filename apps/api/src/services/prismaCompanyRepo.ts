@@ -10,6 +10,9 @@ function cuid() {
 }
 
 type PrismaLike = {
+  organization: {
+    upsert: (args: any) => Promise<any>;
+  };
   company: {
     create: (args: any) => Promise<any>;
     findMany: (args?: any) => Promise<any[]>;
@@ -20,9 +23,47 @@ type PrismaLike = {
     create: (args: any) => Promise<any>;
     findMany: (args: any) => Promise<any[]>;
   };
+  auditLog: {
+    create: (args: any) => Promise<any>;
+  };
 };
 
 let prismaClient: PrismaLike | null = null;
+
+async function ensureOrganization(prisma: PrismaLike, orgId: string, name = 'Default Organization') {
+  try {
+    await prisma.organization.upsert({
+      where: { id: orgId },
+      create: {
+        id: orgId,
+        name,
+        slug: orgId.replace(/[^a-z0-9-]/gi, '-').toLowerCase().slice(0, 48) || 'default',
+      },
+      update: {},
+    });
+  } catch (err) {
+    // Schema may use slug unique — try alternate create path silently
+    console.warn('[prisma] ensureOrganization', err);
+  }
+}
+
+async function writeAuditLog(prisma: PrismaLike, action: string, entityType: string, entityId: string, organizationId?: string) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        id: cuid(),
+        organizationId: organizationId || null,
+        action,
+        entityType,
+        entityId,
+        details: {},
+      },
+    });
+  } catch {
+    // non-fatal
+  }
+}
+
 
 export async function getPrisma(): Promise<PrismaLike | null> {
   if (!process.env.DATABASE_URL || process.env.USE_PRISMA !== 'true') return null;

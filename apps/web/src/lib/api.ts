@@ -86,3 +86,33 @@ export async function downloadReportMarkdown(payload: {
   }
   return res.text();
 }
+
+export async function downloadReportHtml(payload: {
+  companyName: string;
+  current: unknown;
+  dataQuality?: number;
+}) {
+  const res = await fetch(`${API_BASE}/api/reports/html`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTML report failed (${res.status})`);
+  }
+  return res.text();
+}
+
+export async function downloadRatiosCsv(payload: { current: unknown; dataQuality?: number }) {
+  const res = await fetch(`${API_BASE}/api/export/ratios.csv`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `CSV export failed (${res.status})`);
+  }
+  return res.text();
+}
