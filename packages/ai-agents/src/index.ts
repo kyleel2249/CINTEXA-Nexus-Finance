@@ -7,10 +7,12 @@ export * from './agents';
 export * from './debate';
 export * from './recommendations';
 export * from './research';
+export * from './findings/workpapers';
 
 import { runAgentPanel, type AgentContext, type AgentFinding } from './agents';
 import { detectConflicts, buildPanelConclusion } from './debate';
 import { generateRecommendations, buildActionPlans } from './recommendations';
+import { findingsToWorkpapers } from './findings/workpapers';
 import { analyzePeriod, buildExecutiveVerdict } from '@cintexa/financial-engine';
 import type { FinancialPeriodData } from '@cintexa/financial-engine';
 
@@ -22,6 +24,7 @@ export interface FullIntelligenceResult {
   recommendations: ReturnType<typeof generateRecommendations>;
   actionPlans: ReturnType<typeof buildActionPlans>;
   verdict: ReturnType<typeof buildExecutiveVerdict>;
+  workpapers: ReturnType<typeof findingsToWorkpapers>;
 }
 
 export function runFullIntelligence(
@@ -54,5 +57,6 @@ export function runFullIntelligence(
     dataQuality,
     reconciliationFailures: analysis.reconciliations.filter((r) => !r.isBalanced).length,
   });
-  return { analysis, findings, debates, panelConclusion, recommendations, actionPlans, verdict };
+  const workpapers = findingsToWorkpapers(findings);
+  return { analysis, findings, debates, panelConclusion, recommendations, actionPlans, verdict, workpapers };
 }
