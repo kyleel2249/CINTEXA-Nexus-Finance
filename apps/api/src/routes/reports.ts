@@ -106,3 +106,38 @@ reportsRouter.post('/html', (req, res, next) => {
     next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; ')) : err);
   }
 });
+
+reportsRouter.post('/json', (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        companyName: z.string().default('Company'),
+        current: z.object({
+          label: z.string(),
+          fiscalYear: z.number(),
+          incomeStatement: z.record(z.any()),
+          balanceSheet: z.record(z.any()),
+          cashFlow: z.record(z.any()),
+        }),
+        prior: z.any().optional(),
+        dataQuality: z.number().optional(),
+      })
+      .parse(req.body);
+
+    const result = analyzeStructuredPeriod(body.current as any, body.prior, body.dataQuality ?? 80) as any;
+    if (result.status !== 'OK') {
+      return res.status(422).json(result);
+    }
+
+    res.json({
+      companyName: body.companyName,
+      periodLabel: body.current.label,
+      generatedAt: new Date().toISOString(),
+      dataQuality: result.dataQualityScore,
+      intelligence: result.intelligence,
+      disclaimer: DISCLAIMER_FULL,
+    });
+  } catch (err) {
+    next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; ')) : err);
+  }
+});

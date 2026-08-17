@@ -5,6 +5,7 @@ import { RiskBadge } from './components/RiskBadge';
 import { MetricCard } from './components/MetricCard';
 import { UploadPanel } from './components/UploadPanel';
 import { WhatIfPanel } from './components/WhatIfPanel';
+import { BoardroomView } from './components/BoardroomView';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -103,6 +104,8 @@ export default function App() {
   const [cfoLoading, setCfoLoading] = useState(false);
   const [analysisPeriod, setAnalysisPeriod] = useState<any>(null);
   const [reportBusy, setReportBusy] = useState(false);
+  const [boardroomMode, setBoardroomMode] = useState(false);
+  const [expertMode, setExpertMode] = useState<'SIMPLE' | 'PROFESSIONAL' | 'AUDITOR' | 'BOARD'>('PROFESSIONAL');
 
   async function runDemo(kind: 'healthy' | 'distressed') {
     setLoading(true);
@@ -142,7 +145,24 @@ export default function App() {
               Financial Health · Forensic Audit · Corporate Survival Intelligence
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              value={expertMode}
+              onChange={(e) => setExpertMode(e.target.value as any)}
+              title="Expert mode"
+            >
+              <option value="SIMPLE">Simple</option>
+              <option value="PROFESSIONAL">Professional</option>
+              <option value="AUDITOR">Auditor</option>
+              <option value="BOARD">Board</option>
+            </select>
+            <button
+              onClick={() => setBoardroomMode((v) => !v)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${boardroomMode ? 'bg-slate-900 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}
+            >
+              {boardroomMode ? 'Exit Boardroom' : 'Boardroom'}
+            </button>
             <button
               onClick={() => runDemo('healthy')}
               disabled={loading}
@@ -204,7 +224,18 @@ export default function App() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>
         )}
 
-        {result && health && survival && (
+        {result && health && survival && boardroomMode && (
+          <BoardroomView
+            companyLabel={activeDemo === 'healthy' ? 'Healthy Demo Co' : activeDemo === 'distressed' ? 'Distressed Demo Co' : 'Company'}
+            health={health}
+            survival={survival}
+            verdict={intel?.verdict}
+            findings={findings}
+            recommendations={intel?.recommendations || []}
+          />
+        )}
+
+        {result && health && survival && !boardroomMode && (
           <div className="space-y-8">
             {/* Executive verdict */}
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -349,7 +380,9 @@ export default function App() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-slate-600">{m.interpretation}</p>
-                    <p className="mt-1 text-xs text-slate-400">Limitations: {m.limitations}</p>
+                    {expertMode !== 'SIMPLE' && (
+                      <p className="mt-1 text-xs text-slate-400">Limitations: {m.limitations}</p>
+                    )}
                   </div>
                 ))}
               </div>

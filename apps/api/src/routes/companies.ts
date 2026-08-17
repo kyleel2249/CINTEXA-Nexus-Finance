@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import {
+import { persistence } from '../services/persistence.js';
+
+const {
   createCompany,
   listCompanies,
   getCompany,
@@ -8,7 +10,7 @@ import {
   saveSnapshot,
   listSnapshots,
   compareSnapshots,
-} from '../services/companyStore.js';
+} = persistence;
 import { analyzeStructuredPeriod } from '../services/analysisService.js';
 import { AppError } from '../middleware/errorHandler.js';
 

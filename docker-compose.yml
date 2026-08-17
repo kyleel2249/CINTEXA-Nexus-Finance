@@ -1,0 +1,27 @@
+# Optional local infrastructure for CINTEXA Nexus Finance
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cintexa-finance-db
+    environment:
+      POSTGRES_USER: cintexa
+      POSTGRES_PASSWORD: cintexa
+      POSTGRES_DB: cintexa_finance
+    ports:
+      - "5432:5432"
+    volumes:
+      - cintexa_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cintexa -d cintexa_finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cintexa-finance-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  cintexa_pg:

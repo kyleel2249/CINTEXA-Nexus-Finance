@@ -12,6 +12,7 @@ import { scenariosRouter } from './routes/scenarios.js';
 import { companiesRouter } from './routes/companies.js';
 import { reportsRouter } from './routes/reports.js';
 import { cfoChatRouter } from './routes/cfoChat.js';
+import { compareRouter } from './routes/compare.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authMiddleware } from './middleware/auth.js';
 
@@ -29,6 +30,7 @@ app.use('/api/scenarios', scenariosRouter);
 app.use('/api/companies', companiesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/cfo-chat', cfoChatRouter);
+app.use('/api/compare', compareRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -45,6 +47,7 @@ app.get('/', (_req, res) => {
       companyCompare: 'GET /api/companies/:id/compare',
       reportMarkdown: 'POST /api/reports/markdown',
       cfoChat: 'POST /api/cfo-chat',
+      comparePeriods: 'POST /api/compare/periods',
     },
   });
 });

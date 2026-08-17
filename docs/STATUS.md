@@ -26,6 +26,10 @@
 | Research source hierarchy (6 tiers) | Done |
 | Upload panel wired to analyze/text | Done |
 | Early-warning alert engine | Done |
+| Multi-period comparison engine + API | Done |
+| Boardroom mode + expert mode UI | Done |
+| docker-compose (Postgres/Redis) | Done |
+| JSON report export | Done |
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |
 | Professional safety disclaimer | Done |
