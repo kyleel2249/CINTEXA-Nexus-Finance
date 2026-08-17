@@ -11,6 +11,7 @@ import { analyzeRouter } from './routes/analyze.js';
 import { scenariosRouter } from './routes/scenarios.js';
 import { companiesRouter } from './routes/companies.js';
 import { reportsRouter } from './routes/reports.js';
+import { cfoChatRouter } from './routes/cfoChat.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/analyze', analyzeRouter);
 app.use('/api/scenarios', scenariosRouter);
 app.use('/api/companies', companiesRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/cfo-chat', cfoChatRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -40,6 +42,7 @@ app.get('/', (_req, res) => {
       companySnapshots: 'GET /api/companies/:id/snapshots',
       companyCompare: 'GET /api/companies/:id/compare',
       reportMarkdown: 'POST /api/reports/markdown',
+      cfoChat: 'POST /api/cfo-chat',
     },
   });
 });

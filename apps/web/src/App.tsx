@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { analyzeStructured } from './lib/api';
+import { analyzeStructured, askCfo } from './lib/api';
 import { ScoreBadge } from './components/ScoreBadge';
 import { RiskBadge } from './components/RiskBadge';
 import { MetricCard } from './components/MetricCard';
@@ -96,6 +96,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeDemo, setActiveDemo] = useState<'healthy' | 'distressed' | null>(null);
+  const [cfoQuestion, setCfoQuestion] = useState('Can this company survive another year?');
+  const [cfoAnswer, setCfoAnswer] = useState<string | null>(null);
+  const [cfoLoading, setCfoLoading] = useState(false);
 
   async function runDemo(kind: 'healthy' | 'distressed') {
     setLoading(true);
@@ -393,6 +396,42 @@ export default function App() {
                 </div>
               </section>
             )}
+
+            {/* AI CFO */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900">AI CFO</h3>
+              <p className="mt-1 text-sm text-slate-500">Ask questions grounded in the current analysis evidence.</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  value={cfoQuestion}
+                  onChange={(e) => setCfoQuestion(e.target.value)}
+                  placeholder="e.g. Why is the company losing money?"
+                />
+                <button
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  disabled={cfoLoading || !result}
+                  onClick={async () => {
+                    setCfoLoading(true);
+                    setCfoAnswer(null);
+                    try {
+                      const data = activeDemo === 'healthy' ? DEMO_HEALTHY : DEMO_DISTRESSED;
+                      const res = await askCfo({ question: cfoQuestion, current: data, dataQuality: 90 });
+                      setCfoAnswer(res.answer);
+                    } catch (e: any) {
+                      setCfoAnswer(e.message || 'Request failed');
+                    } finally {
+                      setCfoLoading(false);
+                    }
+                  }}
+                >
+                  {cfoLoading ? 'Thinking…' : 'Ask'}
+                </button>
+              </div>
+              {cfoAnswer && (
+                <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700 whitespace-pre-wrap">{cfoAnswer}</div>
+              )}
+            </section>
 
             {/* Disclaimer */}
             <p className="text-xs leading-relaxed text-slate-400">{result.disclaimer}</p>
