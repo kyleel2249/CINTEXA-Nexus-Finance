@@ -7,6 +7,7 @@ import { UploadPanel } from './components/UploadPanel';
 import { WhatIfPanel } from './components/WhatIfPanel';
 import { BoardroomView } from './components/BoardroomView';
 import { SurvivalClock } from './components/SurvivalClock';
+import { PeriodComparisonPanel } from './components/PeriodComparisonPanel';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -193,7 +194,8 @@ export default function App() {
             <p className="mt-6 text-sm text-slate-400">
               Use the demo buttons above to see healthy vs distressed outcomes.
             </p>
-            <div className="mx-auto mt-8 max-w-xl">
+            <div className="mx-auto mt-8 max-w-3xl space-y-6">
+              <PeriodComparisonPanel />
               <UploadPanel onTextReady={async (filename, textContent) => {
                 setLoading(true);
                 setError(null);
@@ -238,6 +240,7 @@ export default function App() {
 
         {result && health && survival && !boardroomMode && (
           <div className="space-y-8">
+            <PeriodComparisonPanel />
             {/* Executive verdict */}
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">

@@ -16,8 +16,11 @@ import { compareRouter } from './routes/compare.js';
 import { perspectivesRouter } from './routes/perspectives.js';
 import { memoRouter } from './routes/memo.js';
 import { exportRouter } from './routes/export.js';
+import { jobsRouter } from './routes/jobs.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authMiddleware } from './middleware/auth.js';
+import { apiKeyMiddleware } from './middleware/apiKey.js';
+import { rateLimitMiddleware } from './middleware/rateLimit.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -25,6 +28,8 @@ const PORT = Number(process.env.PORT) || 4000;
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '10mb' }));
+app.use(rateLimitMiddleware);
+app.use(apiKeyMiddleware);
 app.use(authMiddleware);
 
 app.use('/health', healthRouter);
@@ -37,6 +42,7 @@ app.use('/api/compare', compareRouter);
 app.use('/api/perspectives', perspectivesRouter);
 app.use('/api/memo', memoRouter);
 app.use('/api/export', exportRouter);
+app.use('/api/jobs', jobsRouter);
 
 app.get('/', (_req, res) => {
   res.json({
@@ -58,6 +64,9 @@ app.get('/', (_req, res) => {
       memo: 'POST /api/memo',
       exportRatiosCsv: 'POST /api/export/ratios.csv',
       exportComparisonCsv: 'POST /api/export/comparison.csv',
+      jobs: 'GET /api/jobs, GET /api/jobs/:id',
+      jobAnalyzeStructured: 'POST /api/jobs/analyze-structured',
+      jobAnalyzeText: 'POST /api/jobs/analyze-text',
     },
   });
 });

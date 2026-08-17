@@ -40,6 +40,9 @@
 | Print/PDF via HTML report | Done |
 | Prisma org bootstrap + audit log | Done |
 | Demo seed script | Done |
+| Async job queue (in-memory) | Done |
+| API key + rate limit middleware | Done |
+| Multi-year comparison UI panel | Done |
 
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |
