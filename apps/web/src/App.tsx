@@ -455,6 +455,24 @@ export default function App() {
               </section>
             )}
 
+            {/* Heatmap */}
+            {intel.analysis?.heatmap?.length > 0 && expertMode !== 'SIMPLE' && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Audit Risk Heatmap</h3>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {intel.analysis.heatmap.map((c: any) => (
+                    <div key={c.category} className="rounded-lg border border-slate-100 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium">{c.category}</span>
+                        <RiskBadge level={c.level} />
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">{(c.drivers || []).slice(0, 2).join(' · ')}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Alerts */}
             {intel.analysis?.alerts?.length > 0 && (
               <section className="rounded-2xl border border-red-200 bg-red-50/40 p-6 shadow-sm">

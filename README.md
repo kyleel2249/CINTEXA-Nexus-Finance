@@ -42,6 +42,26 @@ prisma/                 # PostgreSQL schema with full provenance
 ## Getting Started
 
 ```bash
+# Optional infrastructure
+docker compose up -d
+
+# Install workspace deps
+npm install
+
+# Copy env
+cp .env.example .env
+
+# Memory mode (default) — no DB required
+npm run dev
+
+# Prisma mode (optional)
+# Set USE_PRISMA=true and DATABASE_URL, then:
+# npx prisma generate && npx prisma db push
+```
+
+## Getting Started
+
+```bash
 # Install
 npm install
 

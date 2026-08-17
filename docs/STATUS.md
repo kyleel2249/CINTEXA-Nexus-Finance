@@ -30,6 +30,12 @@
 | Boardroom mode + expert mode UI | Done |
 | docker-compose (Postgres/Redis) | Done |
 | JSON report export | Done |
+| Prisma dual-mode persistence (USE_PRISMA=true) | Done |
+| Management memo generator + API | Done |
+| Audit risk heatmap | Done |
+| Alert webhook dispatcher (ALERT_WEBHOOK_URL) | Done |
+| GitHub Actions CI workflow | Done |
+
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |
 | Professional safety disclaimer | Done |

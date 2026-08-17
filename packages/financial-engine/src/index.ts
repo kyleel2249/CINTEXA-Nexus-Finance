@@ -15,6 +15,8 @@ export * from './report/reportBuilder';
 export * from './report/htmlReport';
 export * from './alerts';
 export * from './comparison';
+export * from './memo';
+export * from './heatmap';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';
@@ -22,6 +24,7 @@ import { calculateHealthScore } from './health';
 import { estimateSurvival, generateStandardScenarios } from './survival';
 import { runAllReconciliations } from './reconciliation';
 import { evaluateAlerts } from './alerts';
+import { buildAuditHeatmap } from './heatmap';
 import type { FinancialPeriodData } from './types';
 
 /**
@@ -36,6 +39,7 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
   const reconciliations = runAllReconciliations(current);
   const scenarios = generateStandardScenarios(current);
   const alerts = evaluateAlerts({ period: current, ratios, survival, health });
+  const heatmap = buildAuditHeatmap({ ratios, health, survival, reconciliations, alerts });
 
   return {
     period: current.label,
@@ -47,6 +51,7 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
     reconciliations,
     scenarios,
     alerts,
+    heatmap,
     dataQuality,
     analyzedAt: new Date().toISOString(),
     disclaimer:

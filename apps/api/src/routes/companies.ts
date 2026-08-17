@@ -1,27 +1,22 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { persistence } from '../services/persistence.js';
-
-const {
-  createCompany,
-  listCompanies,
-  getCompany,
-  updateCompanyProfile,
-  saveSnapshot,
-  listSnapshots,
-  compareSnapshots,
-} = persistence;
 import { analyzeStructuredPeriod } from '../services/analysisService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export const companiesRouter = Router();
 
-companiesRouter.get('/', (req, res) => {
-  const org = typeof req.query.organizationId === 'string' ? req.query.organizationId : undefined;
-  res.json({ companies: listCompanies(org) });
+companiesRouter.get('/', async (req, res, next) => {
+  try {
+    const org = typeof req.query.organizationId === 'string' ? req.query.organizationId : undefined;
+    const companies = await persistence.listCompanies(org);
+    res.json({ companies, persistenceMode: persistence.mode() });
+  } catch (err) {
+    next(err);
+  }
 });
 
-companiesRouter.post('/', (req, res, next) => {
+companiesRouter.post('/', async (req, res, next) => {
   try {
     const body = z
       .object({
@@ -32,34 +27,47 @@ companiesRouter.post('/', (req, res, next) => {
         reportingCurrency: z.string().optional(),
       })
       .parse(req.body);
-    const company = createCompany(body);
+    const company = await persistence.createCompany(body);
     res.status(201).json(company);
   } catch (err) {
     next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; ')) : err);
   }
 });
 
-companiesRouter.get('/:id', (req, res, next) => {
-  const company = getCompany(req.params.id);
-  if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
-  res.json(company);
-});
-
-companiesRouter.get('/:id/snapshots', (req, res, next) => {
-  const company = getCompany(req.params.id);
-  if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
-  res.json({ snapshots: listSnapshots(company.id) });
-});
-
-companiesRouter.get('/:id/compare', (req, res, next) => {
-  const company = getCompany(req.params.id);
-  if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
-  res.json(compareSnapshots(company.id));
-});
-
-companiesRouter.post('/:id/analyze', (req, res, next) => {
+companiesRouter.get('/:id', async (req, res, next) => {
   try {
-    const company = getCompany(req.params.id);
+    const company = await persistence.getCompany(req.params.id);
+    if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
+    res.json(company);
+  } catch (err) {
+    next(err);
+  }
+});
+
+companiesRouter.get('/:id/snapshots', async (req, res, next) => {
+  try {
+    const company = await persistence.getCompany(req.params.id);
+    if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
+    const snapshots = await persistence.listSnapshots(company.id);
+    res.json({ snapshots });
+  } catch (err) {
+    next(err);
+  }
+});
+
+companiesRouter.get('/:id/compare', async (req, res, next) => {
+  try {
+    const company = await persistence.getCompany(req.params.id);
+    if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
+    res.json(await persistence.compareSnapshots(company.id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+companiesRouter.post('/:id/analyze', async (req, res, next) => {
+  try {
+    const company = await persistence.getCompany(req.params.id);
     if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
 
     const body = z
@@ -80,7 +88,7 @@ companiesRouter.post('/:id/analyze', (req, res, next) => {
     const health = (result as any).intelligence?.analysis?.health;
     const survival = (result as any).intelligence?.analysis?.survival;
 
-    updateCompanyProfile(company.id, {
+    await persistence.updateCompanyProfile(company.id, {
       healthScore: health?.overallScore,
       classification: health?.classification,
       survival12m: survival?.survivalProbability12m,
@@ -90,9 +98,10 @@ companiesRouter.post('/:id/analyze', (req, res, next) => {
       analyzedAt: new Date().toISOString(),
     });
 
-    saveSnapshot(company.id, result);
+    await persistence.saveSnapshot(company.id, result);
 
-    res.json({ company: getCompany(company.id), analysis: result });
+    const updated = await persistence.getCompany(company.id);
+    res.json({ company: updated, analysis: result, persistenceMode: persistence.mode() });
   } catch (err) {
     next(err instanceof z.ZodError ? new AppError(400, err.errors.map((e) => e.message).join('; ')) : err);
   }
