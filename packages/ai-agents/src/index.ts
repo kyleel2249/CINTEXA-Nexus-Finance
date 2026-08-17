@@ -9,6 +9,7 @@ export * from './recommendations';
 export * from './research';
 export * from './findings/workpapers';
 export * from './perspectives';
+export * from './monitoring';
 
 import { runAgentPanel, type AgentContext, type AgentFinding } from './agents';
 import { detectConflicts, buildPanelConclusion } from './debate';

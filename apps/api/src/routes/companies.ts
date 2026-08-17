@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { persistence } from '../services/persistence.js';
 import { analyzeStructuredPeriod } from '../services/analysisService.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { narrateMonitoringChange } from '@cintexa/ai-agents';
 
 export const companiesRouter = Router();
 
@@ -59,7 +60,26 @@ companiesRouter.get('/:id/compare', async (req, res, next) => {
   try {
     const company = await persistence.getCompany(req.params.id);
     if (!company) return next(new AppError(404, 'Company not found', 'NOT_FOUND'));
-    res.json(await persistence.compareSnapshots(company.id));
+    const comparison = await persistence.compareSnapshots(company.id);
+    const latest = comparison.latest as any;
+    const previous = comparison.previous as any;
+    const pick = (snap: any) => {
+      if (!snap?.payload) return undefined;
+      const payload = snap.payload;
+      const intel = payload.intelligence || payload;
+      return {
+        healthScore: intel?.analysis?.health?.overallScore ?? payload?.healthScore,
+        survival12m: intel?.analysis?.survival?.survivalProbability12m,
+        runwayMonths: intel?.analysis?.survival?.runwayMonthsBase,
+        failureRisk: intel?.analysis?.survival?.failureRisk,
+        findingTitles: (intel?.findings || []).map((f: any) => f.title),
+      };
+    };
+    const monitoring = narrateMonitoringChange({
+      previous: pick(previous),
+      current: pick(latest) || {},
+    });
+    res.json({ ...comparison, monitoring });
   } catch (err) {
     next(err);
   }

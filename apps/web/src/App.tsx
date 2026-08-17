@@ -456,6 +456,45 @@ export default function App() {
               </section>
             )}
 
+            {/* Going concern */}
+            {intel.analysis?.goingConcern && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Going-Concern Assessment</h3>
+                <p className="mt-2 text-sm font-medium text-slate-800">{intel.analysis.goingConcern.indicator.replace(/_/g, ' ')}</p>
+                <p className="mt-1 text-sm text-slate-600">{intel.analysis.goingConcern.summary}</p>
+                <ul className="mt-3 space-y-1 text-sm text-slate-600">
+                  {(intel.analysis.goingConcern.factors || []).map((f: any, i: number) => (
+                    <li key={i}>
+                      <span className={f.adverse ? 'text-red-700' : 'text-emerald-700'}>{f.adverse ? '●' : '○'}</span>{' '}
+                      {f.factor}: {f.detail}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-slate-400">{intel.analysis.goingConcern.professionalNote}</p>
+              </section>
+            )}
+
+            {/* Forensic */}
+            {intel.analysis?.forensic?.length > 0 && expertMode !== 'SIMPLE' && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-slate-900">Forensic Screening</h3>
+                <p className="mt-1 text-xs text-slate-500">Anomalies require investigation and do not automatically indicate fraud.</p>
+                <div className="mt-4 space-y-3">
+                  {intel.analysis.forensic.map((f: any) => (
+                    <div key={f.id} className="rounded-lg border border-slate-100 p-3 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <RiskBadge level={f.severity} />
+                        <span className="text-xs uppercase text-slate-400">{f.disposition.replace(/_/g, ' ')}</span>
+                      </div>
+                      <div className="mt-1 font-medium">{f.title}</div>
+                      <p className="mt-1 text-slate-600">{f.description}</p>
+                      <p className="mt-1 text-xs text-slate-500">Evidence: {f.evidence}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <SurvivalClock
               runwayMonthsBase={survival.runwayMonthsBase}
               survivalProbability12m={survival.survivalProbability12m}

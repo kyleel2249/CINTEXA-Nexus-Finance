@@ -18,6 +18,8 @@ export * from './alerts';
 export * from './comparison';
 export * from './memo';
 export * from './heatmap';
+export * from './forensic';
+export * from './goingConcern';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';
@@ -26,6 +28,8 @@ import { estimateSurvival, generateStandardScenarios } from './survival';
 import { runAllReconciliations } from './reconciliation';
 import { evaluateAlerts } from './alerts';
 import { buildAuditHeatmap } from './heatmap';
+import { runForensicScreens } from './forensic';
+import { assessGoingConcern } from './goingConcern';
 import type { FinancialPeriodData } from './types';
 
 /**
@@ -41,6 +45,23 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
   const scenarios = generateStandardScenarios(current);
   const alerts = evaluateAlerts({ period: current, ratios, survival, health });
   const heatmap = buildAuditHeatmap({ ratios, health, survival, reconciliations, alerts });
+  const magnitudes = [
+    current.incomeStatement.revenue,
+    current.incomeStatement.netIncome,
+    current.balanceSheet.totalAssets,
+    current.balanceSheet.totalLiabilities,
+    current.balanceSheet.cash,
+    current.cashFlow.operatingCashFlow,
+    current.balanceSheet.accountsReceivable || 0,
+    current.balanceSheet.inventory || 0,
+    current.balanceSheet.accountsPayable || 0,
+  ].filter((v) => typeof v === 'number');
+  const forensic = runForensicScreens({
+    magnitudes,
+    netIncome: current.incomeStatement.netIncome,
+    operatingCashFlow: current.cashFlow.operatingCashFlow,
+  });
+  const goingConcern = assessGoingConcern({ period: current, survival, health, ratios, dataQuality });
 
   return {
     period: current.label,
@@ -53,6 +74,8 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
     scenarios,
     alerts,
     heatmap,
+    forensic,
+    goingConcern,
     dataQuality,
     analyzedAt: new Date().toISOString(),
     disclaimer:
