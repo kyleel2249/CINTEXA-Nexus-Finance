@@ -12,7 +12,7 @@
 | Health score 0–100 (9 dimensions) | Done |
 | Distress models (Altman Z/Z', Beneish, Piotroski, cash-flow) | Done |
 | Survival / runway + 5 standard scenarios | Done |
-| What-if scenario API | Done |
+| What-if scenario API + interactive UI | Done |
 | Accounting reconciliation (no silent fix) | Done |
 | Document classification | Done |
 | Extraction + provenance contract | Done |
@@ -20,11 +20,12 @@
 | **14-agent audit panel** + debate/consensus | Done |
 | Recommendations + Immediate/30/90/12-mo plans | Done |
 | Executive verdict | Done |
-| Markdown diagnostic report API | Done |
+| Markdown + HTML diagnostic report APIs | Done |
 | Company workspaces + snapshots + before/after compare | Done (in-memory) |
 | AI CFO chat (evidence-grounded) | Done |
 | Research source hierarchy (6 tiers) | Done |
-| Upload panel (text/CSV; binary via OCR path) | Done |
+| Upload panel wired to analyze/text | Done |
+| Early-warning alert engine | Done |
 | Auth middleware stub + RBAC helpers | Done |
 | Executive React dashboard | Done |
 | Professional safety disclaimer | Done |
@@ -62,14 +63,13 @@
 ## Remaining toward full production
 
 1. Prisma persistence when `DATABASE_URL` is set  
-2. Binary PDF (Puppeteer/PDFKit) from report sections  
-3. Production OCR (Textract / Vision / Azure)  
-4. Interactive what-if controls on UI  
-5. Firebase/JWT real auth + org isolation  
-6. External research fetch with live sources  
-7. Continuous monitoring / alert channels  
-8. Full vitest coverage across packages  
-9. Drag-and-drop multi-file queue with progress polling  
+2. Binary PDF via Puppeteer from HTML report  
+3. Production OCR adapters  
+4. Firebase/JWT real auth + hard org isolation  
+5. Live external research fetch  
+6. Alert notification channels (email/webhook)  
+7. Expanded vitest coverage + CI  
+8. Multi-file upload queue with progress polling  
 
 ## Design invariants (enforced in code)
 

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { analyzeStructured, askCfo } from './lib/api';
+import { analyzeStructured, analyzeText, askCfo, downloadReportMarkdown } from './lib/api';
 import { ScoreBadge } from './components/ScoreBadge';
 import { RiskBadge } from './components/RiskBadge';
 import { MetricCard } from './components/MetricCard';
 import { UploadPanel } from './components/UploadPanel';
+import { WhatIfPanel } from './components/WhatIfPanel';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -100,16 +101,20 @@ export default function App() {
   const [cfoQuestion, setCfoQuestion] = useState('Can this company survive another year?');
   const [cfoAnswer, setCfoAnswer] = useState<string | null>(null);
   const [cfoLoading, setCfoLoading] = useState(false);
+  const [analysisPeriod, setAnalysisPeriod] = useState<any>(null);
+  const [reportBusy, setReportBusy] = useState(false);
 
   async function runDemo(kind: 'healthy' | 'distressed') {
     setLoading(true);
     setError(null);
     setActiveDemo(kind);
     try {
+      const period = kind === 'healthy' ? DEMO_HEALTHY : DEMO_DISTRESSED;
       const data = await analyzeStructured({
-        current: kind === 'healthy' ? DEMO_HEALTHY : DEMO_DISTRESSED,
+        current: period,
         dataQuality: 90,
       });
+      setAnalysisPeriod(period);
       setResult(data);
     } catch (e: any) {
       setError(e.message || 'Analysis failed');
@@ -168,9 +173,22 @@ export default function App() {
               Use the demo buttons above to see healthy vs distressed outcomes.
             </p>
             <div className="mx-auto mt-8 max-w-xl">
-              <UploadPanel onTextReady={(filename, text) => {
-                console.log('Uploaded', filename, text.slice(0, 200));
-                // Future: POST /api/analyze/text
+              <UploadPanel onTextReady={async (filename, textContent) => {
+                setLoading(true);
+                setError(null);
+                setActiveDemo(null);
+                try {
+                  const data = await analyzeText({ filename, textContent });
+                  setResult(data);
+                  if (data?.intelligence?.analysis) {
+                    // period reconstructed server-side; what-if needs structured input later
+                    setAnalysisPeriod(null);
+                  }
+                } catch (e: any) {
+                  setError(e.message || 'Upload analysis failed');
+                } finally {
+                  setLoading(false);
+                }
               }} />
             </div>
           </div>
@@ -402,6 +420,56 @@ export default function App() {
                   ))}
                 </div>
               </section>
+            )}
+
+            {/* Alerts */}
+            {intel.analysis?.alerts?.length > 0 && (
+              <section className="rounded-2xl border border-red-200 bg-red-50/40 p-6 shadow-sm">
+                <h3 className="font-semibold text-red-900">Early Warning Alerts</h3>
+                <ul className="mt-3 space-y-2">
+                  {intel.analysis.alerts.map((a: any) => (
+                    <li key={a.id} className="flex flex-wrap items-start gap-2 text-sm">
+                      <RiskBadge level={a.severity} />
+                      <span className="text-slate-800">{a.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {analysisPeriod && <WhatIfPanel current={analysisPeriod} />}
+
+            {/* Report download */}
+            {analysisPeriod && (
+              <div className="flex justify-end">
+                <button
+                  disabled={reportBusy}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  onClick={async () => {
+                    setReportBusy(true);
+                    try {
+                      const md = await downloadReportMarkdown({
+                        companyName: activeDemo === 'healthy' ? 'Healthy Demo Co' : activeDemo === 'distressed' ? 'Distressed Demo Co' : 'Company',
+                        current: analysisPeriod,
+                        dataQuality: 90,
+                      });
+                      const blob = new Blob([md], { type: 'text/markdown' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'cintexa-financial-diagnostic.md';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch (e: any) {
+                      setError(e.message || 'Report download failed');
+                    } finally {
+                      setReportBusy(false);
+                    }
+                  }}
+                >
+                  {reportBusy ? 'Generating…' : 'Download Markdown Report'}
+                </button>
+              </div>
             )}
 
             {/* AI CFO */}

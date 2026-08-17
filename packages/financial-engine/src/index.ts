@@ -12,12 +12,15 @@ export * from './survival';
 export * from './reconciliation';
 export * from './report/executiveSummary';
 export * from './report/reportBuilder';
+export * from './report/htmlReport';
+export * from './alerts';
 
 import { calculateAllRatios } from './ratios';
 import { runAllDistressModels } from './distress';
 import { calculateHealthScore } from './health';
 import { estimateSurvival, generateStandardScenarios } from './survival';
 import { runAllReconciliations } from './reconciliation';
+import { evaluateAlerts } from './alerts';
 import type { FinancialPeriodData } from './types';
 
 /**
@@ -31,6 +34,7 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
   const survival = estimateSurvival(current, dataQuality);
   const reconciliations = runAllReconciliations(current);
   const scenarios = generateStandardScenarios(current);
+  const alerts = evaluateAlerts({ period: current, ratios, survival, health });
 
   return {
     period: current.label,
@@ -41,6 +45,7 @@ export function analyzePeriod(current: FinancialPeriodData, prior?: FinancialPer
     survival,
     reconciliations,
     scenarios,
+    alerts,
     dataQuality,
     analyzedAt: new Date().toISOString(),
     disclaimer:

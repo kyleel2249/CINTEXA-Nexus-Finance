@@ -2,7 +2,7 @@
   "name": "cintexa-nexus-finance",
   "version": "1.0.0",
   "private": true,
-  "description": "CINTEXA Nexus — Financial Health, Forensic Audit & Corporate Survival Intelligence Engine",
+  "description": "CINTEXA Nexus \u2014 Financial Health, Forensic Audit & Corporate Survival Intelligence Engine",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -12,7 +12,7 @@
     "dev:api": "npm run dev -w @cintexa/api",
     "dev:web": "npm run dev -w @cintexa/web",
     "build": "npm run build -w @cintexa/shared && npm run build -w @cintexa/financial-engine && npm run build -w @cintexa/document-processor && npm run build -w @cintexa/ai-agents && npm run build -w @cintexa/api && npm run build -w @cintexa/web",
-    "test": "npm run test -w @cintexa/financial-engine --if-present",
+    "test": "npm run test -w @cintexa/financial-engine --if-present && npm run test -w @cintexa/document-processor --if-present && npm run test -w @cintexa/ai-agents --if-present",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
