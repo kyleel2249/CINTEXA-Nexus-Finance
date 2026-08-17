@@ -3,6 +3,7 @@ import { analyzeStructured, askCfo } from './lib/api';
 import { ScoreBadge } from './components/ScoreBadge';
 import { RiskBadge } from './components/RiskBadge';
 import { MetricCard } from './components/MetricCard';
+import { UploadPanel } from './components/UploadPanel';
 
 const DEMO_HEALTHY = {
   label: 'FY2025',
@@ -166,6 +167,12 @@ export default function App() {
             <p className="mt-6 text-sm text-slate-400">
               Use the demo buttons above to see healthy vs distressed outcomes.
             </p>
+            <div className="mx-auto mt-8 max-w-xl">
+              <UploadPanel onTextReady={(filename, text) => {
+                console.log('Uploaded', filename, text.slice(0, 200));
+                // Future: POST /api/analyze/text
+              }} />
+            </div>
           </div>
         )}
 

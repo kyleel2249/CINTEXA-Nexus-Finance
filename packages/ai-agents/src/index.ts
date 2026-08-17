@@ -6,6 +6,7 @@
 export * from './agents';
 export * from './debate';
 export * from './recommendations';
+export * from './research';
 
 import { runAgentPanel, type AgentContext, type AgentFinding } from './agents';
 import { detectConflicts, buildPanelConclusion } from './debate';
